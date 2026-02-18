@@ -4,7 +4,7 @@ import { Property, Form, Section } from "../components";
 import { createGeneralMessage } from "../redux/actions";
 import {
   FormError,
-  getContactFormErrorObject,
+  // getContactFormErrorObject,
   contactFormErrors,
 } from "../helpers/form_validation";
 
@@ -19,75 +19,79 @@ const ContactAgentContainer = ({ property }) => {
   };
 
   const [formDetails, setFormDetails] = useState(formInitialDetails);
+  const [touched, setTouched] = useState({ name: false, email: false, phone: false, message: false });
+  const [errors, setErrors] = useState(formInitialDetails);
 
-  // const [name, setName] = useState("");
-  // const [email, setEmail] = useState("");
-  // const [phone, setPhone] = useState("");
-  // const [message, setMessage] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [buttonText, setButtonText] = useState("Send");
 
   useEffect(() => {
     setSubmitted(false);
-    // setName("");
-    // setEmail("");
-    // setPhone("");
-    // setMessage("");
   }, []);
+
+  const validateField = (name, value) => {
+    if (name === "name") {
+      return /^[A-Za-z0-9 ']{5,}$/g.test(value)
+      ? ""
+      : "Invalid name provided"
+    }
+    if (name === "email") {
+      return /^[A-Za-z0-9 ']{5,}$/g.test(value)
+      ? ""
+      : "Invalid email provided"
+    }
+    if (name === "phone") {
+      return /^[A-Za-z0-9 ']{5,}$/g.test(value)
+      ? ""
+      : "Invalid phone provided"
+    }
+    if (name === "message") {
+      return /^[A-Za-z0-9 ']{5,}$/g.test(value)
+      ? ""
+      : "Invalid message provided"
+    }
+    return "";
+  };
+
+  const validateForm = () => {
+    const newErrors = {
+      name: validateField("name", formDetails.name),
+      email: validateField("email", formDetails.email),
+      phone: validateField("phone", formDetails.phone),
+      message: validateField("message", formDetails.message),
+    };
+    setErrors(newErrors);
+    return Object.values(newErrors).every(e => e === "");
+  }
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormDetails(prev => ({...prev, [name]: value}));
+
+    if (touched[name]) {
+      setErrors(prev => ({...prev, [name]: validateField(name, value)}));
+    }
+  }
+
+  const handleBlur = (e) => {
+    const { name, value } = e.target;
+    setTouched(prev => ({...prev, [name]: true}));
+    setErrors(prev => ({...prev, [name]: validateField(name, value)}));
+  }
 
   const saveGeneralMessage = (e) => {
     e.preventDefault();
-    // var data = {
-    //   name: name,
-    //   email: email,
-    //   phone: phone,
-    //   message: message,
-    // };
+
+    if (!validateForm()) return;
+
     setButtonText("Sending...");
-    // dispatch(createGeneralMessage(data));
     dispatch(createGeneralMessage(formDetails));
     setSubmitted(true);
-    // setName("");
-    // setEmail("");
-    // setPhone("");
-    // setMessage("");
     setTimeout(() => {
       setButtonText("Send");
       setFormDetails(formInitialDetails);
       setSubmitted(false);
     }, 5000);
-  };
-
-  let initialFormErrorObject = {
-    nameError: false,
-    emailError: false,
-    phoneError: false,
-    messageError: false,
-  };
-
-  const [formErrorObject, setFormErrorObject] = useState(
-    initialFormErrorObject
-  );
-
-  const doesFormHaveErrors = () => {
-    return (
-      Object.values(formErrorObject)
-        .map((v) => (v ? true : false))
-        .includes(true) ||
-      Object.values(formDetails)
-        .map((v) => (!v ? true : false))
-        .includes(true)
-    );
-  };
-
-  const onFormUpdate = (category, value) => {
-    let obj = getContactFormErrorObject(category, value, formErrorObject);
-    let newObj = { ...formErrorObject, ...obj };
-    setFormErrorObject({ ...formErrorObject, ...newObj });
-    setFormDetails({
-      ...formDetails,
-      [category]: value,
-    });
   };
 
   return (
@@ -121,60 +125,55 @@ const ContactAgentContainer = ({ property }) => {
               <Form.FormGroup>
                 <Form.Input
                   type="text"
+                  name="name"
                   placeholder="Your Name"
-                  // value={name}
-                  value={formDetails.name}
-                  // onChange={(e) => setName(e.target.value)}
-                  onChange={(e) => onFormUpdate("name", e.target.value)}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
                 />
-                {formErrorObject.nameError && (
+                {touched.name && errors.name && (
                   <FormError msg={contactFormErrors["name"].error} />
                 )}
               </Form.FormGroup>
               <Form.FormGroup>
                 <Form.Input
                   type="text"
+                  name="email"
                   placeholder="Your Email"
-                  // value={email}
-                  value={formDetails.email}
-                  // onChange={(e) => setEmail(e.target.value)}
-                  onChange={(e) => onFormUpdate("email", e.target.value)}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
                 />
-                {formErrorObject.emailError && (
+                {touched.email && errors.email && (
                   <FormError msg={contactFormErrors["email"].error} />
                 )}
               </Form.FormGroup>
               <Form.FormGroup>
                 <Form.Input
                   type="text"
+                  name="phone"
                   placeholder="Your Phone Number"
-                  // value={phone}
-                  value={formDetails.phone}
-                  // onChange={(e) => setPhone(e.target.value)}
-                  onChange={(e) => onFormUpdate("phone", e.target.value)}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
                 />
-                {formErrorObject.phoneError && (
+                {touched.phone && errors.phone && (
                   <FormError msg={contactFormErrors["phone"].error} />
                 )}
               </Form.FormGroup>
               <Form.FormGroup>
                 <Form.TextArea
                   placeholder="Your Message"
-                  name=""
+                  name="message"
                   id=""
                   cols="30"
                   rows="10"
-                  // value={message}
-                  value={formDetails.message}
-                  // onChange={(e) => setMessage(e.target.value)}
-                  onChange={(e) => onFormUpdate("message", e.target.value)}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
                 ></Form.TextArea>
                 {formDetails.message.length < 25 && (
                   <div>
                     ({25 - formDetails.message.length} characters still needed)
                   </div>
                 )}
-                {formErrorObject.messageError && (
+                {touched.message && errors.message && (
                   <FormError msg={contactFormErrors["message"].error} />
                 )}
               </Form.FormGroup>
@@ -182,12 +181,6 @@ const ContactAgentContainer = ({ property }) => {
                 <Form.SubmitInput
                   type="submit"
                   value="Send Message"
-                  disabled={buttonText === "Sending..." || doesFormHaveErrors()}
-                  style={{
-                    color: doesFormHaveErrors() && "lightgrey",
-                    cursor: doesFormHaveErrors() && "not-allowed",
-                    marginRight: "20px",
-                  }}
                   onClick={(e) => saveGeneralMessage(e)}
                 />
               </Form.FormGroup>
